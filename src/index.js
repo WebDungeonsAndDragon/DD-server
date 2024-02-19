@@ -1,5 +1,6 @@
 // import libraries
 const express = require("express");
+const cors = require("cors");
 
 const app = express();
 
@@ -17,8 +18,8 @@ const imageGenerationController = require("./controller/ImageAPI.controller");
 app.use("/api/v1/ChatGPT", chatgptController);
 app.use("/api/v1/ImageGeneration", imageGenerationController);
 
-// start the application so that it listens at port 8081
-const port = process?.env?.PORT || 8081;
+// start the application so that it listens at port 4000
+const port = process?.env?.PORT || 4000;
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
