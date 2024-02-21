@@ -12,7 +12,7 @@ const io = new Server({
 io.on("connection", (socket) => {
   console.log("new user connected!");
 
-  socket.on("join", ({ name, room }, callback) => {
+  socket.on("example", ({ name, room }, callback) => {
     // const { error, user } = addUser({ id: socket.id, name, room });
     // if (error) return callback(error);
     // socket.emit("message", {
