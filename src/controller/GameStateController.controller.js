@@ -21,6 +21,20 @@ io.on("connection", (socket) => {
     // welcome to room ${user.room}.`,
     // });
   });
+
+  //Function for server to frontend communication for next turn
+  socket.on("next-turn", (currentPlayerAction, currentPlayerTurn) => {
+    //TODO Expecting new prompt to store data from chatGPT
+    const newPrompt = "test prompt";
+    //TODO Expecting 
+    socket.emit("next-turn-success", currentPlayerTurn, newPrompt);
+  });
+
+  //Function for server to frontend communication for End game
+  socket.on("end-game", (prepareEndGame) => {
+    endGame();
+    socket.emit("end-game-success", finalPrompt);
+  });
 });
 
 io.listen(4000);
