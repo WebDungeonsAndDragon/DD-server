@@ -3,6 +3,7 @@ const { Server } = require("socket.io");
 const express = require("express");
 const router = express.Router();
 
+
 const Room = require("../model/Room.model");
 const Player = require("../model/Player.model");
 
@@ -16,12 +17,10 @@ const io = new Server({
 
 io.on("connection", (socket) => {
   console.log("new user connected!");
-
   socket.on("createRoom", ({ roomId, hostName }) => {
     rooms[roomId] = new Room(roomId, new Player(socket.id, hostName));
   });
-
-  socket.on("example", ({ name, room }, callback) => {
+  socket.on("join", ({ name, room }, callback) => {
     // const { error, user } = addUser({ id: socket.id, name, room });
     // if (error) return callback(error);
     // socket.emit("message", {
@@ -30,7 +29,7 @@ io.on("connection", (socket) => {
     // welcome to room ${user.room}.`,
     // });
   });
-});
+})
 
 io.listen(4000);
 
