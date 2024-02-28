@@ -53,11 +53,6 @@ io.on("connection", (socket) => {
 
       socket.emit("end-game-success", {finalPrompt});
     }
-    //if prepare endgame is false
-    else {
-      const message = "Game ending failed"
-      socket.emit("end-game-failure", {message});
-    }
   });
 });
 
