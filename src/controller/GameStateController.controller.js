@@ -38,13 +38,14 @@ io.on("connection", (socket) => {
 
   //Function for server to frontend communication for End game
   socket.on("end-game", (prepareEndGame) => {
+    //if prepare endgame is true
     if (prepareEndGame) {
       //TODO Expecting method for generating final prompt
       const finalPrompt = "test final prompt";
 
-
       socket.emit("end-game-success", finalPrompt);
     }
+    //if prepare endgame is false
     else {
       const message = "Game ending failed"
       socket.emit("end-game-failure", message);
