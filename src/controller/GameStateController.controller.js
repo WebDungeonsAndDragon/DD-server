@@ -31,7 +31,7 @@ io.on("connection", (socket) => {
   });
 
   //Function for server to frontend communication for next turn
-  socket.on("next-turn", (currentPlayerAction, currentPlayerTurn) => {
+  socket.on("next-turn", ({currentPlayerAction, currentPlayerTurn}) => {
     //TODO Expecting method to tell player action to chatGPT
       //most likely involved with getting new prompt
 
@@ -41,22 +41,22 @@ io.on("connection", (socket) => {
     //TODO Create method to update player turn for nextPlayer
     currentPlayerTurn = nextPlayerTurn();
 
-    socket.emit("next-turn-success", currentPlayerTurn, newPrompt);
+    socket.emit("next-turn-success", {currentPlayerTurn, newPrompt});
   });
 
   //Function for server to frontend communication for End game
-  socket.on("end-game", (prepareEndGame) => {
+  socket.on("end-game", ({prepareEndGame}) => {
     //if prepare endgame is true
     if (prepareEndGame) {
       //TODO Expecting method for generating final prompt
       const finalPrompt = "test final prompt";
 
-      socket.emit("end-game-success", finalPrompt);
+      socket.emit("end-game-success", {finalPrompt});
     }
     //if prepare endgame is false
     else {
       const message = "Game ending failed"
-      socket.emit("end-game-failure", message);
+      socket.emit("end-game-failure", {message});
     }
   });
 });
