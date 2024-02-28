@@ -1,9 +1,9 @@
 class Player {
-    constructor(id, name) {
-        this.id = id;
-        this.name = name;
-        this.role = null;
-    }
+    // constructor(id, name) {
+    //     this.id = id;
+    //     this.name = name;
+    //     this.role = null;
+    // }
 
     constructor(id, name, role) {
         this.id = id;

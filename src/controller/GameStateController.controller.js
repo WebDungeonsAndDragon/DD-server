@@ -29,7 +29,7 @@ io.on("connection", (socket) => {
     // welcome to room ${user.room}.`,
     // });
   });
-})
+});
 
 io.listen(4000);
 
