@@ -20,7 +20,7 @@ app.use("/api/v1/ChatGPT", chatgptController);
 app.use("/api/v1/ImageGeneration", imageGenerationController);
 
 // start the application so that it listens at port 4000
-const port = process?.env?.PORT || 5000;
+const port = process?.env?.PORT || 8000;
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
