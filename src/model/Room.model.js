@@ -4,6 +4,7 @@ class Room {
     this.players = [host];
     this.totalRounds = -1;
     this.currentRoundNumber = -1; 
+    this.currentPlayerTurn = -1;
   }
 
   addPlayer(player) {
@@ -23,7 +24,9 @@ class Room {
   updateRoundNumber() {
     this.roundNumber += 1;
   }
-
+  updateCurrentPlayerTurn() {
+    this.currentPlayerTurn = (this.currentPlayerTurn + 1) % this.players.length;
+  }
 
 }
 

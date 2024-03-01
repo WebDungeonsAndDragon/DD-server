@@ -13,6 +13,7 @@ app.use(express.json());
 // controllers
 const chatgptController = require("./controller/ChatGPT.controller");
 const imageGenerationController = require("./controller/ImageAPI.controller");
+const gameStateController = require("./controller/GameStateController.controller");
 
 // Creating an endpoint for a particular resource and link it to a controller
 app.use("/api/v1/ChatGPT", chatgptController);

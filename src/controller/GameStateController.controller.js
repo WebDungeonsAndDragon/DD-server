@@ -16,12 +16,13 @@ const io = new Server({
 
 io.on("connection", (socket) => {
   console.log("new user connected!");
-
   socket.on("createRoom", ({ roomId, hostName }) => {
     rooms[roomId] = new Room(roomId, new Player(socket.id, hostName));
   });
 
-  socket.on("join", ({ name, room }, callback) => {
+  // join room method - takes in roomCode and playerId
+  //  returns playerList
+  socket.on("joinRoom", ({ roomId, player }, callback) => {
     // const { error, user } = addUser({ id: socket.id, name, room });
     // if (error) return callback(error);
     // socket.emit("message", {
@@ -29,26 +30,12 @@ io.on("connection", (socket) => {
     //   text: `${user.name},
     // welcome to room ${user.room}.`,
     // });
+    const newPlayer = new Player(player.id, player.name, null);
+    rooms[roomId].addPlayer(newPlayer);
+    socket.emit("joinRoomSuccess", {
+      players: rooms[roomId].players,
+    })
   });
-
-  // NEXT TURN 
-
-  // Client 
-  // socket.emit("next-turn", ({currentPlayerAction, currentPlayer, roomId});
-
-  // Server 
-  socket.on("next-turn", ({currentPlayerAction, currentPlayer, roomId}) => {
-    // socket.emit("next-turn-to-client", currentPlayerTurn, newPrompt); 
-    // increase player index 
-
-  });
-
-  // Client 
-  // socket.on("next-turn-to-client", (currentPlayerTurn, newPrompt) => {
-  // 
-  // });
-
-  // END ROUND
 
   function endRound(roomId) {
     rooms[roomId].updateRoundNumber();
@@ -58,19 +45,6 @@ io.on("connection", (socket) => {
   }
 
 
-  // Client
-  socket.on("end-round-message", ({roundNumber}) => {
-    // display roundnumber
-    // socket.emit success? 
-  });
-
-  // Display roundNumber? need roomId? add roundNumber to room?
-
-  // LEAVE GAME
-
-  // Client
-  // socket.emit("leave-game", {playerId, roomId});
-
   // Server
   socket.on("leave-game", ({playerThatLeft, roomId}) => {
     rooms[roomId].removePlayer(playerThatLeft)
@@ -79,7 +53,18 @@ io.on("connection", (socket) => {
   });
 
   
-  
+    socket.on("startGame", ({numRounds, roomId, players}, callback) => {
+    // call open AI function to get the prompt
+    rooms[roomId].startGame(numRounds, players);
+    const prompt = "blank";
+    // let currentPlayerTurn = rooms[roomId].players[0];
+    // let roundNumber = 0;
+    socket.emit("startGameSuccess", {
+      prompt: prompt,
+      currentPlayerTurn: rooms[roomId].currentPlayerTurn,
+      roundNumber: rooms[roomId].currentRoundNumber,
+    })
+  })
 });
 
 io.listen(8000);
