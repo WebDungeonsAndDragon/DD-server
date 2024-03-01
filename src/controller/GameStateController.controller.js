@@ -3,7 +3,6 @@ const { Server } = require("socket.io");
 const express = require("express");
 const router = express.Router();
 
-
 const Room = require("../model/Room.model");
 const Player = require("../model/Player.model");
 
@@ -38,7 +37,23 @@ io.on("connection", (socket) => {
     })
   });
 
-  socket.on("startGame", ({numRounds, roomId, players}, callback) => {
+  function endRound(roomId) {
+    rooms[roomId].updateRoundNumber();
+    socket.emit("end-round", {
+      roundNumber: rooms[roomId].currentRoundNumber,
+    });
+  }
+
+
+  // Server
+  socket.on("leave-game", ({playerThatLeft, roomId}) => {
+    rooms[roomId].removePlayer(playerThatLeft)
+    console.log(playerThatLeft + " has left.")
+    // playerId, not playerName
+  });
+
+  
+    socket.on("startGame", ({numRounds, roomId, players}, callback) => {
     // call open AI function to get the prompt
     rooms[roomId].startGame(numRounds, players);
     const prompt = "blank";
@@ -52,6 +67,6 @@ io.on("connection", (socket) => {
   })
 });
 
-io.listen(4000);
+io.listen(8000);
 
 module.exports = router;
