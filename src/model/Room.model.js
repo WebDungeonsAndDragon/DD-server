@@ -3,6 +3,9 @@ class Room {
     this.id = id;
     this.players = [host];
     this.gameEnded = false;
+    this.totalRounds = -1;
+    this.currentRoundNumber = -1; 
+    this.currentPlayerTurn = -1;
   }
 
   addPlayer(player) {
@@ -23,6 +26,15 @@ class Room {
 
   endGame() {
     this.gameEnded = true;
+  }
+  startGame(totalRounds) {
+    this.totalRounds = totalRounds;
+    this.roundNumber = 0;
+    this.currentPlayerTurn = 0;
+  }
+
+  updateRoundNumber() {
+    this.roundNumber += 1;
   }
 }
 
