@@ -31,28 +31,28 @@ io.on("connection", (socket) => {
   });
 
   //Function for server to frontend communication for next turn
-  socket.on("next-turn", ({currentPlayerAction, currentPlayerTurn}) => {
-    //TODO Expecting method to tell player action to chatGPT
-      //most likely involved with getting new prompt
+  socket.on("next-turn", ({currentPlayerAction, roomId}) => {
+    const room = rooms[roomId];
 
-    //TODO Expecting new prompt to store data from chatGPT
+    //call OpenAI function to get the Prompt
     const newPrompt = "test prompt";
 
     //TODO Create method to update player turn for nextPlayer
-    currentPlayerTurn = nextPlayerTurn();
+    room.updateCurrentPlayerTurn();
 
-    socket.emit("next-turn-success", {currentPlayerTurn, newPrompt});
+    socket.emit("next-turn-success", {currentPlayerTurn: room.currentPlayerTurn, prompt: newPrompt});
   });
 
   //Function for server to frontend communication for End game
-  socket.on("end-game", ({prepareEndGame}) => {
-    //if prepare endgame is true
-    if (prepareEndGame) {
-      //TODO Expecting method for generating final prompt
-      const finalPrompt = "test final prompt";
+  socket.on("end-game", ({endGameReason, roomId}) => {
+    const room = rooms[roomId];
+    //pass endGameReason into chatGPT for final prompt specifics
+    //call OpenAI Function to get the prompt
+    const finalPrompt = "test final prompt";
 
-      socket.emit("end-game-success", {finalPrompt});
-    }
+    room.endGame();
+
+    socket.emit("end-game-success", {prompt: finalPrompt});
   });
 });
 
