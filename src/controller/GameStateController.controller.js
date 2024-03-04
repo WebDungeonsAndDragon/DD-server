@@ -19,9 +19,6 @@ io.on("connection", (socket) => {
   socket.on("createRoom", ({ roomId, hostName }) => {
     rooms[roomId] = new Room(roomId, new Player(socket.id, hostName));
   });
-
-  // join room method - takes in roomCode and playerId
-  //  returns playerList
   socket.on("joinRoom", ({ roomId, player }, callback) => {
     // const { error, user } = addUser({ id: socket.id, name, room });
     // if (error) return callback(error);
@@ -52,8 +49,32 @@ io.on("connection", (socket) => {
     // playerId, not playerName
   });
 
+  //Function for server to frontend communication for next turn
+  socket.on("next-turn", ({currentPlayerAction, roomId}) => {
+    const room = rooms[roomId];
+
+    //call OpenAI function to get the Prompt
+    const newPrompt = "test prompt";
+
+    //TODO Create method to update player turn for nextPlayer
+    room.updateCurrentPlayerTurn();
+
+    socket.emit("next-turn-success", {currentPlayerTurn: room.currentPlayerTurn, prompt: newPrompt});
+  });
+
+  //Function for server to frontend communication for End game
+  socket.on("end-game", ({endGameReason, roomId}) => {
+    const room = rooms[roomId];
+    //pass endGameReason into chatGPT for final prompt specifics
+    //call OpenAI Function to get the prompt
+    const finalPrompt = "test final prompt";
+
+    room.endGame();
+
+    socket.emit("end-game-success", {prompt: finalPrompt});
+  });
   
-    socket.on("startGame", ({numRounds, roomId, players}, callback) => {
+   socket.on("startGame", ({numRounds, roomId, players}, callback) => {
     // call open AI function to get the prompt
     rooms[roomId].startGame(numRounds, players);
     const prompt = "blank";
