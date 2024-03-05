@@ -2,9 +2,11 @@ const { OpenAI } = require("openai");
 const express = require("express");
 const router = express.Router();
 
-// const openai = new OpenAI({
-//   apiKey: "",
-// });
+const CHATGPT_API_KEY = process?.env?.CHATGPT_API_KEY;
+
+const openai = new OpenAI({
+  apiKey: CHATGPT_API_KEY,
+});
 // const completion = openai.ChatCompletion.create(
 //   (model = "gpt-3.5-turbo"),
 //   (messages = [

@@ -1,12 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios").default;
+const EDEN_AI_API_KEY = process?.env?.EDEN_AI_API_KEY;
 
 const options = {
   method: "POST",
   url: "https://api.edenai.run/v2/image/generation",
   headers: {
-    authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiODIxMDJkOTktNDE4Yi00M2ZlLWJjNDMtMDMwNzQ3OGFhYTA3IiwidHlwZSI6ImFwaV90b2tlbiJ9.mUwa0gVvVGr11Uanxzcf0kLbsqLSBX-GrF02pGM848A"
+    authorization: `Bearer ${EDEN_AI_API_KEY}`,
   },
   data: {
     providers: "openai",
@@ -15,23 +16,22 @@ const options = {
     fallback_providers: "",
   },
 };
- 
 
-router.get('/', (req, res) => {
-    axios
-  .request(options)
-  .then((response) => {
-    console.log(response.data);
-    res.send(response.data[0].image_resource_url)
-  })
-  .catch((error) => {
-    console.error(error);
-  });
- })
+router.get("/", (req, res) => {
+  axios
+    .request(options)
+    .then((response) => {
+      console.log(response.data);
+      res.send(response.data.openai.items[0].image_resource_url);
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+});
 
 // module.exports = router;
 
-//learn how to call edenai, 
+//learn how to call edenai,
 // Assuming EdenAI has a Node SDK, which might not be the case
 /*const EdenAI = require("@edenai/ai-sdk");
 
