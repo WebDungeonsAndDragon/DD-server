@@ -1,11 +1,13 @@
 class Player {
-    constructor(id) {
-        this.id = id;
-        this.role = null;
-    }
+    // constructor(id, name) {
+    //     this.id = id;
+    //     this.name = name;
+    //     this.role = null;
+    // }
 
-    constructor(id, role) {
+    constructor(id, name, role) {
         this.id = id;
+        this.name = name;
         this.role = role;
     }
 

@@ -13,13 +13,14 @@ app.use(express.json());
 // controllers
 const chatgptController = require("./controller/ChatGPT.controller");
 const imageGenerationController = require("./controller/ImageAPI.controller");
+const gameStateController = require("./controller/GameStateController.controller");
 
 // Creating an endpoint for a particular resource and link it to a controller
 app.use("/api/v1/ChatGPT", chatgptController);
 app.use("/api/v1/ImageGeneration", imageGenerationController);
 
 // start the application so that it listens at port 4000
-const port = process?.env?.PORT || 4000;
+const port = process?.env?.PORT || 8000;
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
