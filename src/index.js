@@ -25,5 +25,5 @@ app.use("/api/v1/ImageGeneration", imageGenerationController);
 // start the application so that it listens at port 8081
 const port = process?.env?.PORT || 8081;
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+    console.log(`Example app listening on port ${port}`);
 });
