@@ -11,7 +11,7 @@ const openai = new OpenAI({
 /**
  * Helper function to fetch and return data from ChatGPT
  * @param {string} text The prompt that is used to ask ChatGPT something.
- * @returns The JSON object that contains the response from ChatGPT.
+ * @returns {JSON} The JSON object that contains the response from ChatGPT.
  */
 async function helper(text) {
     const completion = await openai.chat.completions.create({
@@ -34,20 +34,23 @@ async function helper(text) {
  * Uses the context variable of the room for ChatGPT to remember previous conversations.
  */
 const prompts = {
-    "start-game":
-        'Create a scenario for a team of 4 players - player 1 is a fighter, player 2 is a mage, player 3 is a cleric, and player 4 is a thief. Only introduce the challenge, do not start the game yet. The output should be in JSON format. The format should be {"introduction": string}',
-    "start-round": (roundNumber, firstPlayerRole) =>
+    "start-game": (firstPlayerRole) =>
         rooms.context +
-        `Start round ${roundNumber} of the game. The entire game should last 3 rounds with each round consisting of 4 turns (1 for each player). The ${firstPlayerRole} needs to do something. Give the ${firstPlayerRole} a set of 4 options to choose from. The output should in JSON format. The format should be {"newPrompt": string, "options": string[]}.`,
+        `Create a scenario for a team of 4 players - player 1 is a fighter, player 2 is a mage, player 3 is a cleric, and player 4 is a thief. Introduce the challenge, then start the first round of the game. The entire game should last 3 rounds with each round consisting of 4 turns (1 for each player). The ${firstPlayerRole} needs to do something. Give the ${firstPlayerRole} a set of 4 options to choose from. The output should in JSON format. The format should be {"introduction": string, "newPrompt": string, "options": string[]}.`,
     "next-turn": (currentPlayerRole, optionChosen, nextPlayerRole) =>
         rooms.context +
         `The ${currentPlayerRole} chooses to do this: ${optionChosen}. With this information, ask the ${nextPlayerRole} to do something from a set of 4 options. Make sure to incorporate what the ${currentPlayerRole} does as well. The output should be in JSON format. The format should be {"newPrompt": string, "options": string[]}.`,
-    "end-round": (lastPlayerRole, optionChosen) =>
+    "end-round": (
+        lastPlayerRole,
+        optionChosen,
+        roundToStart,
+        firstPlayerRole
+    ) =>
         rooms.context +
-        `The ${lastPlayerRole} chooses to do this: ${optionChosen}. With this information, end the round. The output should be in JSON format. The format should be {"endRound": string}.`,
+        `The ${lastPlayerRole} chooses to do this: ${optionChosen}. With this information, end the round. Start round ${roundToStart} of the game. The entire game should last 3 rounds with each round consisting of 4 turns (1 for each player). The ${firstPlayerRole} needs to do something. Give the ${firstPlayerRole} a set of 4 options to choose from. The output should be in JSON format. The format should be {"endRound": string, "newPrompt": string, "options": string[]}.`,
     "end-game":
         rooms.context +
-        'End the game. Flip a coin to choose whether the party wins or loses. The output should be in JSON format. The format should be {"endGame": string}',
+        `End the game. Choose whether the party wins or loses and explain what happened. The output should be in JSON format. The format should be {"endGame": string}`,
 };
 
 /**
@@ -60,30 +63,17 @@ async function addToContext(strToAdd) {
 
 /**
  * Gives the start-game prompt to ChatGPT.
- * @returns {string} The introduction text for the challenge.
+ * Use when starting the game once AND round 1 AND also giving player 1 options.
+ * @param {string} firstPlayerRole The role of the first player/host. Ex: Fighter, Mage, etc.
+ * @returns {string[]} A list of strings including the challenge's introduction, newPrompt for player 1, and their options.
  */
-async function startGameGPT() {
-    const startGameText = await helper(prompts["start-game"]);
+async function startGameGPT(firstPlayerRole) {
+    const startGameText = await helper(prompts["start-game"](firstPlayerRole));
 
     const resp = await startGameText;
     addToContext(`Story: ${resp.introduction}\n`);
-    return resp.introduction;
-}
-
-/**
- * Gives the start-round prompt to ChatGPT.
- * Use when starting each round AND also giving player 1 options.
- * @param {number} roundNumber The round to start.
- * @param {string} firstPlayerRole The role of the first player/host. Ex: Fighter, Mage, etc.
- * @returns {string[]} A list of strings including the newPrompt for player 1, and their options.
- */
-async function startRoundGPT(roundNumber, firstPlayerRole) {
-    const startRoundText = await helper(
-        prompts["start-round"](roundNumber, firstPlayerRole)
-    );
-
-    const resp = await startRoundText;
     return [
+        resp.introduction,
         resp.newPrompt,
         resp.options[0],
         resp.options[1],
@@ -120,20 +110,40 @@ async function nextTurnGPT(currentPlayerRole, optionChosen, nextPlayerRole) {
 
 /**
  * Gives the end-round prompt to ChatGPT.
+ * Use after the last player has played, and to start the next round.
  * @param {string} lastPlayerRole The role of the last player. Ex: Fighter, Mage, etc.
  * @param {string} optionChosen The entire option that the last player chose.
- * @returns The text that concludes the round.
+ * @param {number} roundToStart The number of the round that needs to begin after the current one ends.
+ * @param {string} firstPlayerRole The role of the first player to play in the NEW round. Ex: Fighter, Mage, etc.
+ * @returns {string[]} A list of strings containing the text that concludes the round, the new prompt for the first player in the new round, and their options.
  */
-async function endRound(lastPlayerRole, optionChosen) {
+async function endRound(
+    lastPlayerRole,
+    optionChosen,
+    roundToStart,
+    firstPlayerRole
+) {
     const endRoundText = await helper(
-        prompts["end-round"](lastPlayerRole, optionChosen)
+        prompts["end-round"](
+            lastPlayerRole,
+            optionChosen,
+            roundToStart,
+            firstPlayerRole
+        )
     );
 
     const resp = await endRoundText;
     addToContext(
         `The ${lastPlayerRole} chooses to do this: ${optionChosen}. The round has ended: ${resp.endRound}`
     );
-    return resp.endRound;
+    return [
+        resp.endRound,
+        resp.newPrompt,
+        resp.options[0],
+        resp.options[1],
+        resp.options[2],
+        resp.options[3],
+    ];
 }
 
 /**
@@ -152,15 +162,12 @@ async function endGame() {
 
 // router.get("/", async (req, res) => {
 //     // put function in here
-//     await startGameGPT().then((response) => {
+
+//     await startGameGPT("Fighter").then((response) => {
 //         console.log(response);
 //     });
 
-//     await startRoundGPT("1", "Fighter").then((response) => {
-//         console.log(response);
-//     });
-
-//     await nextTurnGPT("Fighter", "Mage", "2").then((response) => {
+//     await nextTurnGPT("Fighter", "2", "Mage").then((response) => {
 //         console.log(response);
 //     });
 // });
