@@ -5,7 +5,7 @@ const router = express.Router();
 const rooms = require("../utils/rooms");
 
 const openai = new OpenAI({
-  apiKey: "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",
+  apiKey: process?.env?.CHATGPT_API_KEY,
 });
 
 /**
