@@ -7,6 +7,12 @@ const Room = require("../model/Room.model");
 const Player = require("../model/Player.model");
 
 const rooms = require("../utils/rooms");
+const {
+  endGameGPT,
+  endRoundGPT,
+  startGameGPT,
+  nextTurnGPT,
+} = require("./ChatGPT.controller");
 
 const io = new Server({
   cors: {
@@ -17,18 +23,19 @@ const io = new Server({
 io.on("connection", (socket) => {
   console.log("new user connected!");
   socket.on("createRoom", ({ roomId, hostName }) => {
-    rooms[roomId] = new Room(roomId, new Player(socket.id, hostName));
+    rooms[roomId] = new Room(roomId, new Player(socket.id, hostName, null));
   });
-  socket.on("joinRoom", ({ roomId, player }, callback) => {
-    // const { error, user } = addUser({ id: socket.id, name, room });
-    // if (error) return callback(error);
-    // socket.emit("message", {
-    //   user: "admin",
-    //   text: `${user.name},
-    // welcome to room ${user.room}.`,
-    // });
-    const newPlayer = new Player(player.id, player.name, null);
-    rooms[roomId].addPlayer(newPlayer);
+  socket.on("joinRoom", ({ roomId, playerName }) => {
+    const newPlayer = new Player(socket.id, playerName, null);
+    socket.join(roomId);
+    if (rooms[roomId] === undefined) {
+      rooms[roomId] = new Room(roomId, newPlayer);
+    } else {
+      rooms[roomId].addPlayer(newPlayer);
+    }
+    socket.to(roomId).emit("joinRoomSuccess", {
+      players: rooms[roomId].players,
+    });
     socket.emit("joinRoomSuccess", {
       players: rooms[roomId].players,
     });
@@ -50,43 +57,103 @@ io.on("connection", (socket) => {
 
   //Function for server to frontend communication for next turn
   socket.on("next-turn", ({ currentPlayerAction, roomId }) => {
-    const room = rooms[roomId];
+    // const room = rooms[roomId];
 
-    //call OpenAI function to get the Prompt
-    const newPrompt = "test prompt";
+    // const newPrompt = "test prompt";
+    previousPlayer = rooms[roomId].players[rooms[roomId].currentPlayerTurn];
+    const hasStartedNewRound = rooms[roomId].updateCurrentPlayerTurn();
+    if (hasStartedNewRound) {
+      endRound(roomId);
+      endRoundGPT(
+        roomId,
+        previousPlayer.role,
+        currentPlayerAction,
+        rooms[roomId].currentRoundNumber,
+        rooms[roomId].players[0].role
+      ).then((response) => {
+        socket.to(roomId).emit("end-round-success", {
+          currentPlayerTurn: rooms[roomId].players[0].id,
+          introduction: response.endRound,
+          prompt: response.newPrompt,
+          options: response.options,
+        });
+        socket.emit("end-round-success", {
+          currentPlayerTurn: rooms[roomId].players[0].id,
+          introduction: response.endRound,
+          prompt: response.newPrompt,
+          options: response.options,
+        });
+      });
+      return;
+    }
 
-    //TODO Create method to update player turn for nextPlayer
-    room.updateCurrentPlayerTurn();
-
-    socket.emit("next-turn-success", {
-      currentPlayerTurn: room.currentPlayerTurn,
-      prompt: newPrompt,
+    nextTurnGPT(
+      roomId,
+      previousPlayer.role,
+      currentPlayerAction,
+      rooms[roomId].players[rooms[roomId].currentPlayerTurn].role
+    ).then((response) => {
+      socket.to(roomId).emit("next-turn-success", {
+        currentPlayerTurn:
+          rooms[roomId].players[rooms[roomId].currentPlayerTurn].id,
+        prompt: response,
+      });
+      socket.emit("next-turn-success", {
+        currentPlayerTurn:
+          rooms[roomId].players[rooms[roomId].currentPlayerTurn].id,
+        prompt: response,
+      });
     });
   });
 
   //Function for server to frontend communication for End game
   socket.on("end-game", ({ endGameReason, roomId }) => {
     const room = rooms[roomId];
+    endGameGPT(roomId).then((response) => {
+      room.endGame();
+      socket.to(roomId).emit("end-game-success", { prompt: response });
+      socket.emit("end-game-success", { prompt: response });
+    });
     //pass endGameReason into chatGPT for final prompt specifics
     //call OpenAI Function to get the prompt
-    const finalPrompt = "test final prompt";
-
-    room.endGame();
-
-    socket.emit("end-game-success", { prompt: finalPrompt });
+    // const finalPrompt = "test final prompt";
   });
 
-  socket.on("startGame", ({ numRounds, roomId, players }, callback) => {
-    // call open AI function to get the prompt
-    rooms[roomId].startGame(numRounds, players);
-    const prompt = "blank";
-    // let currentPlayerTurn = rooms[roomId].players[0];
-    // let roundNumber = 0;
-    socket.emit("startGameSuccess", {
-      prompt: prompt,
-      currentPlayerTurn: rooms[roomId].currentPlayerTurn,
-      roundNumber: rooms[roomId].currentRoundNumber,
-    });
+  socket.on("startGame", ({ numRounds, roomId, roles }) => {
+    // update roles of players
+    rooms[roomId].startGame(numRounds, roles);
+    startGameGPT(
+      roomId,
+      rooms[roomId].players[rooms[roomId].currentPlayerTurn].role
+    )
+      .then((response) => {
+        socket.to(roomId).emit("startGameSuccess", {
+          introduction: response.introduction,
+          prompt: response.prompt,
+          currentPlayerTurn:
+            rooms[roomId].players[rooms[roomId].currentPlayerTurn].id,
+          roundNumber: rooms[roomId].currentRoundNumber,
+          options: response.options,
+        });
+        socket.emit("startGameSuccess", {
+          introduction: response.introduction,
+          prompt: response.prompt,
+          currentPlayerTurn:
+            rooms[roomId].players[rooms[roomId].currentPlayerTurn].id,
+          roundNumber: rooms[roomId].currentRoundNumber,
+          options: response.options,
+        });
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  });
+
+  socket.on("removePlayer", ({ roomId }) => {
+    if (rooms[roomId]) {
+      console.log(roomId);
+      rooms[roomId].removePlayer(socket.id);
+    }
   });
 });
 
