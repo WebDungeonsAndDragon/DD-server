@@ -52,7 +52,7 @@ const prompts = {
     `The ${lastPlayerRole} chooses to do this: ${optionChosen}. With this information, end the round. Start round ${roundToStart} of the game. The entire game should last 3 rounds with each round consisting of 4 turns (1 for each player). The ${firstPlayerRole} needs to do something. Give the ${firstPlayerRole} a set of 4 options to choose from. The output should be in JSON format. The format should be {"endRound": string, "newPrompt": string, "options": string[]}.`,
   "end-game": (roomId) =>
     rooms[roomId].context +
-    `End the game. Choose whether the party wins or loses and explain what happened. The output should be in JSON format. The format should be {"endGame": string}`,
+    `End the game. Choose whether the party wins or loses and give a story of how they won/lost. The output should be in JSON format. The format should be {"endGame": string, "story": string}`,
 };
 
 /**
@@ -163,7 +163,8 @@ async function endGameGPT(roomId) {
 
   const resp = await endGameText;
   addToContext(roomId, `The game has ended: ${resp.endGame}`);
-  return resp.endGame;
+  console.log(resp);
+  return resp;
 }
 
 // module.exports = router;

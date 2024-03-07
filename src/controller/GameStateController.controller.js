@@ -111,8 +111,8 @@ io.on("connection", (socket) => {
     const room = rooms[roomId];
     endGameGPT(roomId).then((response) => {
       room.endGame();
-      socket.to(roomId).emit("end-game-success", { prompt: response });
-      socket.emit("end-game-success", { prompt: response });
+      socket.to(roomId).emit("end-game-success", response);
+      socket.emit("end-game-success", response);
     });
     //pass endGameReason into chatGPT for final prompt specifics
     //call OpenAI Function to get the prompt
