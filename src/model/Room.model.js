@@ -7,6 +7,8 @@ class Room {
     this.currentRoundNumber = -1;
     this.currentPlayerTurn = -1;
     this.context = "";
+    this.badDecisions = -1;
+    this.endGameEarly = false;
   }
 
   getPlayer(id) {

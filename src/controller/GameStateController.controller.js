@@ -71,18 +71,23 @@ io.on("connection", (socket) => {
         rooms[roomId].currentRoundNumber,
         rooms[roomId].players[0].role
       ).then((response) => {
-        socket.to(roomId).emit("end-round-success", {
-          currentPlayerTurn: rooms[roomId].players[0].id,
-          introduction: response.endRound,
-          prompt: response.newPrompt,
-          options: response.options,
-        });
-        socket.emit("end-round-success", {
-          currentPlayerTurn: rooms[roomId].players[0].id,
-          introduction: response.endRound,
-          prompt: response.newPrompt,
-          options: response.options,
-        });
+        if (rooms[roomId].endGameEarly) {
+          endGameHelper(roomId);
+        } else {
+          socket.to(roomId).emit("end-round-success", {
+            currentPlayerTurn: rooms[roomId].players[0].id,
+            introduction: response.endRound,
+            prompt: response.newPrompt,
+            options: response.options,
+          });
+          socket.emit("end-round-success", {
+            currentPlayerTurn: rooms[roomId].players[0].id,
+            introduction: response.endRound,
+            prompt: response.newPrompt,
+            options: response.options,
+          });
+          rooms[roomId].badDecisions = 0;
+        }
       });
       return;
     }
@@ -106,14 +111,18 @@ io.on("connection", (socket) => {
     });
   });
 
-  //Function for server to frontend communication for End game
-  socket.on("end-game", ({ endGameReason, roomId }) => {
+  function endGameHelper(roomId) {
     const room = rooms[roomId];
     endGameGPT(roomId).then((response) => {
       room.endGame();
       socket.to(roomId).emit("end-game-success", response);
       socket.emit("end-game-success", response);
     });
+  }
+
+  //Function for server to frontend communication for End game
+  socket.on("end-game", ({ endGameReason, roomId }) => {
+    endGameHelper(roomId);
     //pass endGameReason into chatGPT for final prompt specifics
     //call OpenAI Function to get the prompt
     // const finalPrompt = "test final prompt";
@@ -124,7 +133,8 @@ io.on("connection", (socket) => {
     rooms[roomId].startGame(numRounds, roles);
     startGameGPT(
       roomId,
-      rooms[roomId].players[rooms[roomId].currentPlayerTurn].role
+      rooms[roomId].players[rooms[roomId].currentPlayerTurn].role,
+      roles
     )
       .then((response) => {
         socket.to(roomId).emit("startGameSuccess", {
