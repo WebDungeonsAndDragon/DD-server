@@ -40,6 +40,15 @@ io.on("connection", (socket) => {
       players: rooms[roomId].players,
     });
   });
+  socket.on("select-role", ({ roomId, role }) => {
+    rooms[roomId].players[socket.id].setRole(role);
+    socket.to(roomId).emit("select-role-success", {
+      players: rooms[roomId].players,
+    });
+    socket.emit("select-role-success", {
+      players: rooms[roomId].players,
+    });
+  });
 
   function endRound(roomId) {
     rooms[roomId].updateRoundNumber();
