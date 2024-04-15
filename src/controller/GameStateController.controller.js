@@ -27,8 +27,12 @@ io.on("connection", (socket) => {
   socket.on("createRoom", ({ roomId, hostName }) => {
     rooms[roomId] = new Room(roomId, new Player(socket.id, hostName, null));
   });
+
   socket.on("joinRoom", ({ roomId, playerName }) => {
     const newPlayer = new Player(socket.id, playerName, null);
+    console.log(
+      "new player joined: " + socket.id + roomId + " " + newPlayer.name
+    );
     socket.join(roomId);
     if (rooms[roomId] === undefined) {
       rooms[roomId] = new Room(roomId, newPlayer);
@@ -42,8 +46,12 @@ io.on("connection", (socket) => {
       players: rooms[roomId].players,
     });
   });
+
   socket.on("select-role", ({ roomId, role }) => {
-    rooms[roomId].players[socket.id].setRole(role);
+    rooms[roomId].getPlayer(socket.id)?.setRole(role);
+
+    console.log("role selected: " + socket.id + " " + role);
+
     socket.to(roomId).emit("select-role-success", {
       players: rooms[roomId].players,
     });
@@ -86,13 +94,13 @@ io.on("connection", (socket) => {
           endGameHelper(roomId);
         } else {
           socket.to(roomId).emit("end-round-success", {
-            currentPlayerTurn: rooms[roomId].players[0].id,
+            currentPlayerTurn: rooms[roomId].players[0],
             introduction: response.endRound,
             prompt: response.newPrompt,
             options: response.options,
           });
           socket.emit("end-round-success", {
-            currentPlayerTurn: rooms[roomId].players[0].id,
+            currentPlayerTurn: rooms[roomId].players[0],
             introduction: response.endRound,
             prompt: response.newPrompt,
             options: response.options,
@@ -111,12 +119,12 @@ io.on("connection", (socket) => {
     ).then((response) => {
       socket.to(roomId).emit("next-turn-success", {
         currentPlayerTurn:
-          rooms[roomId].players[rooms[roomId].currentPlayerTurn].id,
+          rooms[roomId].players[rooms[roomId].currentPlayerTurn],
         prompt: response,
       });
       socket.emit("next-turn-success", {
         currentPlayerTurn:
-          rooms[roomId].players[rooms[roomId].currentPlayerTurn].id,
+          rooms[roomId].players[rooms[roomId].currentPlayerTurn],
         prompt: response,
       });
     });
@@ -142,17 +150,20 @@ io.on("connection", (socket) => {
   socket.on("startGame", ({ numRounds, roomId, roles }) => {
     // update roles of players
     rooms[roomId].startGame(numRounds, roles);
+
     startGameGPT(
       roomId,
       rooms[roomId].players[rooms[roomId].currentPlayerTurn].role,
       roles
     )
       .then((response) => {
+        console.log("game started: " + roomId + " " + numRounds + " " + roles);
+
         socket.to(roomId).emit("startGameSuccess", {
           introduction: response.introduction,
           prompt: response.prompt,
           currentPlayerTurn:
-            rooms[roomId].players[rooms[roomId].currentPlayerTurn].id,
+            rooms[roomId].players[rooms[roomId].currentPlayerTurn],
           roundNumber: rooms[roomId].currentRoundNumber,
           options: response.options,
         });
@@ -160,7 +171,7 @@ io.on("connection", (socket) => {
           introduction: response.introduction,
           prompt: response.prompt,
           currentPlayerTurn:
-            rooms[roomId].players[rooms[roomId].currentPlayerTurn].id,
+            rooms[roomId].players[rooms[roomId].currentPlayerTurn],
           roundNumber: rooms[roomId].currentRoundNumber,
           options: response.options,
         });
