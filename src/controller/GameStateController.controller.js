@@ -20,6 +20,8 @@ const io = new Server({
   },
 });
 
+// const io = require("../middleware/Socket.middleware");
+
 io.on("connection", (socket) => {
   console.log("new user connected!");
   socket.on("createRoom", ({ roomId, hostName }) => {
